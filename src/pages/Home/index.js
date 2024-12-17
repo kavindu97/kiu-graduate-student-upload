@@ -26,7 +26,7 @@ function Home() {
         marginBottom: "10px"
 
     };
-    const ipAddress ='http://localhost:8081';
+    const ipAddress ='http://192.168.57.142:8081';
     const [courses, setCourses] = useState([]);
     const [batches, setBatches] = useState([]);
     const [batchTypes, setBatchTypes] = useState([]);
@@ -35,6 +35,7 @@ function Home() {
     const [selectedBatchId, setSelectedBatchId] = useState('');
     const [studentId, setStudentId] = useState('');
     const [email, setEmail] = useState('');
+    const [activeCourses, setActiveCourses] = useState('');
 
     const handleCourseChange = (event) => {
         setSelectedCourseId(event.target.value);
@@ -48,7 +49,7 @@ function Home() {
 
     const getCourseList = async () => {
         try {
-            const response = await axios.get(`${ipAddress}/status/course-list`);
+            const response = await axios.get(`${ipAddress}/status/active_courses/${studentId}`);
             setCourses(response.data.data);
         } catch (error) {
             console.error("There was an error fetching the course list!", error);
@@ -56,8 +57,10 @@ function Home() {
     };
 
     useEffect(() => {
-        getCourseList();
-    }, []);
+        if(studentId) {
+            getCourseList();
+        }
+    }, [studentId]);
 
     const getBatchList = async () => {
         try {
@@ -107,6 +110,12 @@ function Home() {
                     title: 'Success',
                     text: 'Student data has been successfully inserted!',
                 });
+            }else if(response.data.code === 403){
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Already exist',
+                    text: 'Student data has been already inserted!',
+                });
             }
         } catch (error) {
             console.error("There was an error saving the student data!", error);
@@ -123,7 +132,8 @@ function Home() {
                     <h1 style={{color: "#1976D2"}}>Add Graduated student</h1>
                     {/*<TextField label={'Name'} value={name} onChange={(e) => setName(e.target.value)} />*/}
                     {/*<TextField label={'Address'} value={email} onChange={(e) => setEmail(e.target.value)} />*/}
-                    <TextField label={'Student Number'} value={studentId} onChange={(e) => setStudentId(e.target.value)}/>
+                    <TextField label={'Student Number'} value={studentId}
+                               onChange={(e) => setStudentId(e.target.value)}/>
                     <SelectVariants
                         label="Course"
                         courseId={selectedCourseId}
@@ -144,7 +154,7 @@ function Home() {
                             <MenuItem value="">
                                 <em>None</em>
                             </MenuItem>
-                            {batches.map(batch => (
+                            {courses.filter(batch => batch.course_id === selectedCourseId).map(batch => (
                                 <MenuItem key={batch.batch_id} value={batch.batch_id}>{batch.batch_name}</MenuItem>
                             ))}
                         </Select>
@@ -163,15 +173,19 @@ function Home() {
                             <MenuItem value="">
                                 <em>None</em>
                             </MenuItem>
-                            {batchTypes.map(batchType => (
-                                <MenuItem key={batchType.id} value={batchType.id}>{batchType.name}</MenuItem>
+                            {courses.filter(batchType => (batchType.course_id === selectedCourseId)).map(batchType => (
+                                <MenuItem key={batchType.batch_type_id}
+                                          value={batchType.batch_type_id}>{batchType.batch_type_name}</MenuItem>
+
                             ))}
                         </Select>
                     </FormControl>
 
 
-
                     <BasicButtons text={'Save'} style={buttonStyle} onClick={handleSave}/>
+                    <p>Batch id {selectedBatchId}</p>
+                    <p>Course id {selectedCourseId}</p>
+                    <p>Batch type id {selectedBatchTypeId}</p>
 
                 </Paper>
             </Container>
